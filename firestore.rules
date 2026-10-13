@@ -1,0 +1,320 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- Authentication and organizer authorization -----
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function emailVerified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function hasOrganizerRecord(uid) {
+      return exists(
+        /databases/$(database)/documents/organizers/$(uid)
+      );
+    }
+
+    function myOrganizer() {
+      return get(
+        /databases/$(database)/documents/organizers/$(request.auth.uid)
+      ).data;
+    }
+
+    // Approval is stored in Firestore and is the source of truth for staff access.
+    // This helper intentionally does not depend on the ID token's email_verified
+    // claim, which may be stale immediately after the user verifies their email.
+    function hasApprovedOrganizerRecord() {
+      return signedIn()
+        && hasOrganizerRecord(request.auth.uid)
+        && myOrganizer().status == 'approved'
+        && myOrganizer().role in ['owner', 'admin', 'organizer'];
+    }
+
+    // Privileged write operations still require a verified email token.
+    function isApprovedOrganizer() {
+      return emailVerified() && hasApprovedOrganizerRecord();
+    }
+
+    function isOwner() {
+      return isApprovedOrganizer() && myOrganizer().role == 'owner';
+    }
+
+    function isAdmin() {
+      return isApprovedOrganizer() && myOrganizer().role == 'admin';
+    }
+
+    function hasPermission(permission) {
+      return isOwner()
+        || isAdmin()
+        || (
+          isApprovedOrganizer()
+          && myOrganizer().permissions is map
+          && myOrganizer().permissions[permission] == true
+        );
+    }
+
+    function canManageEvents() {
+      return hasPermission('manageEvents');
+    }
+
+    function canManageContent() {
+      return hasPermission('manageContent');
+    }
+
+    function canManageRegistrations() {
+      return hasPermission('viewRegistrations');
+    }
+
+    function canManageMessages() {
+      return hasPermission('manageMessages');
+    }
+
+    function canManageOrganizers() {
+      return hasPermission('manageOrganizers');
+    }
+
+    function canApproveOrganizers() {
+      return hasPermission('approveOrganizers');
+    }
+
+    // ----- Events -----
+    match /events/{eventId} {
+      allow read: if resource.data.published == true || canManageEvents();
+      allow create, update, delete: if canManageEvents();
+    }
+
+    // ----- Public website content -----
+    match /siteContent/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if canManageContent();
+    }
+
+    // ----- Organizer profiles -----
+    match /organizers/{uid} {
+      allow get, list: if signedIn()
+        && (
+          request.auth.uid == uid
+          || canManageOrganizers()
+          || canApproveOrganizers()
+        );
+
+      // Self-registration can create only a pending organizer with no permissions.
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'organizer'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.permissions is map
+        && request.resource.data.permissions.manageEvents == false
+        && request.resource.data.permissions.manageContent == false
+        && request.resource.data.permissions.viewRegistrations == false
+        && request.resource.data.permissions.manageMessages == false
+        && request.resource.data.permissions.manageOrganizers == false
+        && request.resource.data.permissions.approveOrganizers == false
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'displayName', 'email', 'role', 'status',
+          'permissions', 'createdAt', 'updatedAt'
+        ]);
+
+      // Only accounts with organizer-management permission may edit other profiles.
+      // Role promotion is owner-only; approval/rejection requires approval permission.
+      allow update: if canManageOrganizers()
+        && uid != request.auth.uid
+        && resource.data.role != 'owner'
+        && request.resource.data.role != 'owner'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'displayName', 'role', 'status', 'permissions',
+          'reviewedBy', 'updatedAt'
+        ])
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+          || isOwner()
+        )
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+          || canApproveOrganizers()
+        )
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['permissions'])
+          || canManageOrganizers()
+        );
+
+      // Any authorized organizer manager may delete another non-owner profile,
+      // including admin profiles. No user can delete their own profile or the permanent owner.
+      allow delete: if canManageOrganizers()
+        && uid != request.auth.uid
+        && resource.data.role != 'owner';
+    }
+
+    // ----- Private participant registry for safe public aggregates -----
+    // Only the account owner and authorized registration managers can read UID-keyed records.
+    // Public visitors cannot read this collection or any registration PII.
+    match /participantRegistry/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || canManageRegistrations());
+      allow list: if canManageRegistrations();
+      allow create, update: if signedIn() && (
+        (request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.registrationId is string
+          && existsAfter(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId))
+          && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId)).data.uid == uid
+          && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId)).data.status == 'confirmed')
+        || (canManageRegistrations()
+          && request.resource.data.uid == uid
+          && request.resource.data.registrationId is string
+          && exists(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId))
+          && get(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId)).data.uid == uid
+          && get(/databases/$(database)/documents/registrations/$(request.resource.data.registrationId)).data.status == 'confirmed')
+      );
+      allow delete: if canManageRegistrations();
+    }
+
+    // ----- Homepage counters -----
+    // Only aggregate counts are public. Student writes must be atomically tied to a
+    // real, confirmed registration; approved registration managers may repair historic totals.
+    match /publicStats/{statsId} {
+      allow read: if true;
+      allow create: if canManageRegistrations() || (
+        signedIn()
+        && request.resource.data.keys().hasOnly(['totalRegistrations', 'totalParticipants', 'lastRegistrationId', 'updatedAt'])
+        && request.resource.data.totalRegistrations == 1
+        && request.resource.data.totalParticipants == 1
+        && request.resource.data.lastRegistrationId is string
+        && existsAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId))
+        && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId)).data.status == 'confirmed'
+        && existsAfter(/databases/$(database)/documents/participantRegistry/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/participantRegistry/$(request.auth.uid)).data.uid == request.auth.uid
+      );
+      allow update: if canManageRegistrations() || (
+        signedIn()
+        && request.resource.data.keys().hasOnly(['totalRegistrations', 'totalParticipants', 'lastRegistrationId', 'updatedAt'])
+        && request.resource.data.totalRegistrations == resource.data.totalRegistrations + 1
+        && request.resource.data.totalParticipants == resource.data.totalParticipants + (exists(/databases/$(database)/documents/participantRegistry/$(request.auth.uid)) ? 0 : 1)
+        && request.resource.data.lastRegistrationId is string
+        && existsAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId))
+        && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/registrations/$(request.resource.data.lastRegistrationId)).data.status == 'confirmed'
+        && existsAfter(/databases/$(database)/documents/participantRegistry/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/participantRegistry/$(request.auth.uid)).data.uid == request.auth.uid
+      );
+      allow delete: if false;
+    }
+
+    // ----- Campus announcements -----
+    match /announcements/{announcementId} {
+      // Public visitors may read published items. Approved staff can read drafts
+      // based on the approved Firestore organizer record, avoiding stale token claims.
+      // Creating, editing, publishing, and deleting still require manageContent below.
+      allow get, list: if resource.data.published == true || hasApprovedOrganizerRecord();
+
+      allow create: if canManageContent()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 5
+        && request.resource.data.body.size() <= 3000
+        && request.resource.data.published is bool
+        && request.resource.data.keys().hasOnly([
+          'title', 'body', 'date', 'link', 'published',
+          'createdAt', 'updatedAt', 'createdBy'
+        ]);
+
+      allow update: if canManageContent()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 5
+        && request.resource.data.body.size() <= 3000
+        && request.resource.data.published is bool
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'body', 'date', 'link', 'published', 'updatedAt'
+        ]);
+
+      allow delete: if canManageContent();
+    }
+
+    // ----- Student registrations and digital passes -----
+    match /registrations/{registrationId} {
+      function validStudentRegistration() {
+        return emailVerified()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 2
+          && request.resource.data.name.size() <= 100
+          && request.resource.data.emailLower is string
+          && request.resource.data.phone is string
+          && request.resource.data.rollNumber is string
+          && request.resource.data.course is string
+          && request.resource.data.year is string
+          && request.resource.data.eventId is string
+          && request.resource.data.eventTitle is string
+          && request.resource.data.eventDate is string
+          && request.resource.data.eventTime is string
+          && request.resource.data.eventVenue is string
+          && request.resource.data.eventDescription is string
+          && request.resource.data.eventCategory is string
+          && request.resource.data.eventColor is string
+          && request.resource.data.passId is string
+          && request.resource.data.status == 'confirmed'
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.keys().hasAll([
+            'name', 'email', 'emailLower', 'phone', 'rollNumber', 'course', 'year',
+            'uid', 'eventId', 'eventTitle', 'eventDate', 'eventTime', 'eventVenue',
+            'eventDescription', 'eventCategory', 'eventColor', 'passId', 'status', 'createdAt'
+          ])
+          && request.resource.data.keys().hasOnly([
+            'name', 'email', 'emailLower', 'phone', 'rollNumber', 'course', 'year',
+            'uid', 'eventId', 'eventTitle', 'eventDate', 'eventTime', 'eventVenue',
+            'eventDescription', 'eventCategory', 'eventColor', 'passId', 'status', 'createdAt'
+          ]);
+      }
+
+      allow create: if validStudentRegistration();
+      allow get, list: if canManageRegistrations()
+        || (emailVerified() && resource.data.uid == request.auth.uid);
+      allow update, delete: if canManageRegistrations();
+    }
+
+    // ----- Contact form / student messages -----
+    match /contactMessages/{messageId} {
+      allow create: if request.resource.data.keys().hasAll([
+          'name', 'phone', 'course', 'year', 'rollNumber', 'message', 'status', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'name', 'phone', 'course', 'year', 'rollNumber', 'message', 'status', 'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.phone is string
+        && request.resource.data.course is string
+        && request.resource.data.year is string
+        && request.resource.data.rollNumber is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.status == 'New'
+        && request.resource.data.createdAt == request.time;
+
+      allow get, list: if canManageMessages();
+      allow update: if canManageMessages()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'reviewedAt', 'reviewedBy'
+        ]);
+      allow delete: if canManageMessages();
+    }
+
+    // Deny everything else unless an explicit rule above grants access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

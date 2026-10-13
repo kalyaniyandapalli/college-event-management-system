@@ -1,0 +1,640 @@
+/* Fest Club homepage enhancements. Separate from CollegeSplash animation files. */
+
+.hero-festival {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #fffdf9;
+}
+
+.hero-festival .hero-copy,
+.hero-festival .hero-art {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-animated-gradient {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0.7;
+  will-change: transform;
+  animation: fest-gradient-float 12s ease-in-out infinite alternate;
+}
+
+.hero-animated-gradient-one {
+  width: clamp(300px, 39vw, 650px);
+  height: clamp(300px, 39vw, 650px);
+  top: -14%;
+  right: 2%;
+  background: radial-gradient(circle at 35% 35%, rgba(229, 204, 255, 0.86), rgba(255, 191, 167, 0.44) 54%, rgba(255, 253, 249, 0) 72%);
+}
+
+.hero-animated-gradient-two {
+  width: clamp(240px, 31vw, 500px);
+  height: clamp(240px, 31vw, 500px);
+  bottom: -26%;
+  left: -8%;
+  background: radial-gradient(circle at 50% 50%, rgba(180, 245, 233, 0.7), rgba(204, 215, 255, 0.35) 58%, rgba(255, 253, 249, 0) 75%);
+  animation-delay: -4s;
+}
+
+.hero-festival .hero-copy h1 span {
+  background: linear-gradient(105deg, #7658ff 0%, #22b6d2 44%, #f79b72 78%, #7b61d1 100%);
+  background-size: 220% 220%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: fest-gradient-text 8s ease-in-out infinite alternate;
+}
+
+.hero-festival .hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.button-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 1px solid rgba(118, 88, 255, 0.2);
+  border-radius: 13px;
+  background: linear-gradient(110deg, #ede7ff, #e3f8ff 54%, #fff0e7);
+  color: #28203e;
+  font-weight: 750;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.button-color:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(80, 62, 150, 0.14);
+}
+
+.hero-stats .hero-stat-metric {
+  display: grid;
+  gap: 5px;
+  min-width: 98px;
+}
+
+.hero-stat-metric strong {
+  display: block;
+  color: #252039;
+  font-size: clamp(1.55rem, 2.1vw, 2.2rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-stat-metric span {
+  color: #7e7a8f;
+  font-size: 0.8rem;
+}
+
+.festival-overview,
+.festival-categories,
+.upcoming-showcase,
+.announcements-section {
+  width: 100%;
+  max-width: none;
+  padding: clamp(34px, 5.2vw, 76px) var(--fest-gutter);
+  box-sizing: border-box;
+}
+
+.festival-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+  gap: clamp(24px, 5vw, 84px);
+  align-items: center;
+  background: linear-gradient(120deg, #17132d 0%, #24204b 52%, #332663 100%);
+  color: #fff;
+}
+
+.festival-overview-copy {
+  max-width: 670px;
+}
+
+.festival-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fa896d;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.festival-overview h2,
+.festival-section-heading h2 {
+  margin: 12px 0 10px;
+  font-size: clamp(1.8rem, 3.5vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.festival-overview h2 span {
+  color: #bcb2ff;
+}
+
+.festival-overview p {
+  max-width: 54ch;
+  color: #d1cde6;
+  line-height: 1.75;
+}
+
+.festival-countdown-wrap {
+  min-width: 0;
+}
+
+.countdown-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+  padding: clamp(18px, 2.3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  background: linear-gradient(140deg, rgba(255,255,255,0.12), rgba(255,255,255,0.055));
+  box-shadow: 0 18px 45px rgba(7, 5, 23, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.countdown-icon,
+.announcement-mark {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #ff8d70, #ffc36e);
+  color: #221936;
+}
+
+.countdown-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.countdown-label {
+  color: #bcb2ff;
+  font-size: 0.69rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+}
+
+.countdown-content h3 {
+  margin: 7px 0 5px;
+  color: #fff;
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+  overflow-wrap: anywhere;
+}
+
+.countdown-content p {
+  margin: 0;
+  color: #d2cee5;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.countdown-timer {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+
+.countdown-timer > div {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 10px 4px;
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 11px;
+  background: rgba(13, 10, 38, 0.28);
+}
+
+.countdown-timer strong {
+  color: #fff;
+  font-size: clamp(1.15rem, 2vw, 1.75rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.countdown-timer span {
+  color: #cbc6e5;
+  font-size: 0.7rem;
+}
+
+.countdown-register,
+.announcement-copy a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #ffd0a4;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.countdown-register:hover,
+.announcement-copy a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.countdown-finished {
+  display: inline-block;
+  margin-top: 14px;
+  color: #ffd0a4;
+  font-size: 0.82rem;
+}
+
+.countdown-empty {
+  min-height: 170px;
+  align-items: center;
+}
+
+.festival-categories,
+.upcoming-showcase,
+.announcements-section {
+  background: #fffdf9;
+}
+
+.festival-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 0 24px;
+}
+
+.festival-section-heading h2 {
+  color: #252039;
+}
+
+.festival-section-heading p {
+  margin: 0;
+  color: #777487;
+  line-height: 1.65;
+}
+
+.festival-section-heading > a {
+  flex: 0 0 auto;
+}
+
+.festival-category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.festival-category-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 17px;
+  border: 1px solid #eeeaf4;
+  border-radius: 18px;
+  background: #fff;
+  color: #27213e;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(42, 30, 74, 0.045);
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+}
+
+.festival-category-card:hover,
+.festival-category-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: #bdb0ff;
+  box-shadow: 0 16px 28px rgba(42, 30, 74, 0.1);
+  outline: none;
+}
+
+.category-emoji {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 15px;
+  background: #efe9ff;
+  font-size: 1.55rem;
+}
+
+.category-tech .category-emoji { background: #e4f4ff; }
+.category-culture .category-emoji { background: #ffe6e1; }
+.category-sports .category-emoji { background: #e4f7e8; }
+.category-workshop .category-emoji { background: #fff0d9; }
+
+.category-card-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 5px;
+  min-width: 0;
+}
+
+.category-card-copy strong {
+  font-size: 1rem;
+}
+
+.category-card-copy small {
+  color: #858094;
+  font-size: 0.77rem;
+  line-height: 1.45;
+}
+
+.category-arrow {
+  flex: 0 0 auto;
+  color: #8170db;
+}
+
+.upcoming-showcase {
+  padding-top: 0;
+}
+
+.upcoming-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.upcoming-compact-card {
+  display: flex;
+  gap: 15px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #eeebf4;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(39, 29, 68, 0.05);
+}
+
+.upcoming-date-tile {
+  display: flex;
+  flex: 0 0 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  gap: 3px;
+  min-height: 72px;
+  border-radius: 13px;
+  background: #eee8ff;
+  color: #30264b;
+}
+
+.upcoming-date-tile span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.upcoming-date-tile strong {
+  font-size: 1.55rem;
+  line-height: 1.05;
+}
+
+.upcoming-date-tile.mint { background: #dff8ee; }
+.upcoming-date-tile.coral { background: #ffe5dd; }
+.upcoming-date-tile.blue { background: #e0efff; }
+
+.upcoming-compact-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.event-category-label {
+  color: #7968d4;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.upcoming-compact-copy h3 {
+  margin: 6px 0;
+  color: #252039;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.upcoming-compact-copy p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 0;
+  color: #7d788b;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.upcoming-compact-copy a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 11px;
+  color: #5443b7;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.announcement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.announcement-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #eeebf4;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.announcement-mark {
+  flex-basis: 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: #eae5ff;
+  color: #5142a8;
+}
+
+.announcement-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.announcement-meta {
+  color: #867da9;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.announcement-copy h3 {
+  margin: 7px 0;
+  color: #27213e;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.announcement-copy p {
+  margin: 0;
+  color: #777487;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.festival-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 22px;
+  border: 1px dashed #d9d3e9;
+  border-radius: 17px;
+  background: #faf8ff;
+  color: #746b91;
+}
+
+.festival-empty-state strong {
+  display: block;
+  color: #30294a;
+}
+
+.festival-empty-state p {
+  margin: 5px 0 0;
+  color: #7d788b;
+  line-height: 1.55;
+}
+
+.student-auth-cta {
+  white-space: nowrap;
+}
+
+.student-welcome {
+  max-width: 160px;
+  color: #48415f;
+  font-size: 0.85rem;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-auth-shell {
+  background:
+    radial-gradient(circle at 5% 10%, rgba(203, 247, 240, 0.65), transparent 27%),
+    radial-gradient(circle at 95% 20%, rgba(230, 213, 255, 0.7), transparent 28%),
+    #fffdf9;
+}
+
+.student-auth-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(117, 94, 186, 0.15);
+  box-shadow: 0 22px 80px rgba(40, 26, 75, 0.1);
+}
+
+.student-auth-icon {
+  background: linear-gradient(145deg, #e9e0ff, #dff8f3);
+  color: #4e3da7;
+}
+
+.student-auth-switches {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.success-message {
+  padding: 12px 14px;
+  border: 1px solid #b9e7d1;
+  border-radius: 12px;
+  background: #effcf5;
+  color: #176346;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.student-auth-note {
+  margin: 16px 0;
+  color: #807a90;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+@keyframes fest-gradient-float {
+  0% { transform: translate3d(-2%, -1%, 0) scale(0.96); }
+  100% { transform: translate3d(3%, 3%, 0) scale(1.06); }
+}
+
+@keyframes fest-gradient-text {
+  0% { background-position: 0% 45%; }
+  100% { background-position: 100% 55%; }
+}
+
+@media (max-width: 1050px) {
+  .festival-category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .upcoming-compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .festival-overview { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .hero-animated-gradient-one { right: -34%; top: 8%; }
+  .hero-animated-gradient-two { left: -30%; bottom: -10%; }
+  .hero-festival .hero-actions { align-items: stretch; }
+  .hero-festival .hero-actions .button { width: 100%; }
+  .festival-overview,
+  .festival-categories,
+  .upcoming-showcase,
+  .announcements-section { padding: 42px var(--fest-gutter); }
+  .festival-overview { gap: 22px; }
+  .festival-section-heading { align-items: flex-start; flex-direction: column; }
+  .festival-section-heading h2 { font-size: clamp(1.7rem, 8vw, 2.35rem); }
+  .festival-category-grid,
+  .upcoming-compact-grid,
+  .announcement-grid { grid-template-columns: minmax(0, 1fr); }
+  .festival-category-card { min-height: 88px; }
+  .upcoming-showcase { padding-top: 0; }
+  .countdown-card { gap: 11px; padding: 17px; }
+  .countdown-icon { flex-basis: 38px; width: 38px; height: 38px; }
+  .countdown-timer { gap: 5px; }
+  .countdown-timer > div { padding: 9px 2px; }
+  .countdown-timer strong { font-size: 1.25rem; }
+  .upcoming-compact-card { padding: 15px; }
+  .announcement-card { padding: 18px; }
+  .student-auth-switches { align-items: flex-start; flex-direction: column; }
+  .student-auth-cta { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-animated-gradient,
+  .hero-festival .hero-copy h1 span,
+  .festival-category-card,
+  .button-color { animation: none; transition: none; }
+}
